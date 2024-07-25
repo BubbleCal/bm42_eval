@@ -40,22 +40,24 @@ def sanitize_query_for_tantivy(query):
 
 
 def main():
-    dataset = lance.dataset(f"data/{DATASET}/bm25.lance")
+    path = f"data/{DATASET}/bm25.lance"
+    dataset = lance.dataset(
+        path,
+    )
 
     number_of_queries = 10_000
     queries = list(load_queries().values())[:number_of_queries]
     queries = [sanitize_query_for_tantivy(query["text"]) for query in queries]
 
-    for concurrency in [1, 2, 4, 8, 16, 32]:
+    for concurrency in [4, 8, 16]:
         latencies = []
         limit = 10
 
         def search_bm25(query):
             start = time.time()
             hits = dataset.scanner(
-                columns=[],
-                with_row_id=True,
-                full_text_query={"query": query},
+                columns=["doc_id"],
+                full_text_query=query,
                 limit=limit,
             ).to_table()
             latencies.append(time.time() - start)
@@ -70,12 +72,12 @@ def main():
         for _ in tqdm(results, total=number_of_queries):
             pass
         latencies.sort()
-        mean = sum(latencies) / len(latencies)
-        p50 = latencies[int(len(latencies) * 0.5) - 1]
-        p90 = latencies[int(len(latencies) * 0.9) - 1]
-        p99 = latencies[int(len(latencies) * 0.99) - 1]
+        mean = sum(latencies) / len(latencies) * 1000
+        p50 = latencies[int(len(latencies) * 0.5) - 1] * 1000
+        p90 = latencies[int(len(latencies) * 0.9) - 1] * 1000
+        p99 = latencies[int(len(latencies) * 0.99) - 1] * 1000
         print(
-            f"concurrency: {concurrency}, QPS: {number_of_queries/ (time.time() - start)}, mean: {mean}, p50: {p50}, p90: {p90}, p99: {p99}"
+            f"concurrency: {concurrency}, QPS: {number_of_queries/ (time.time() - start)}, mean: {mean:.2f}ms, p50: {p50:.2f}ms, p90: {p90:.2f}ms, p99: {p99:.2f}ms"
         )
 
 

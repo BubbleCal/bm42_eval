@@ -30,7 +30,7 @@ def main():
     # Declaring our schema.
     schema_builder = tantivy.SchemaBuilder()
     schema_builder.add_text_field("body", stored=True, tokenizer_name="en_stem")
-    schema_builder.add_text_field("doc_id", stored=True)
+    schema_builder.add_text_field("doc_id")
     schema = schema_builder.build()
 
     # Creating our index (in memory)

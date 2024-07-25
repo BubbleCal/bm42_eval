@@ -9,6 +9,7 @@ import pyarrow as pa
 
 DATASET = os.getenv("DATASET", "quora")
 
+
 def read_file(file_name: str) -> Iterable[str]:
     with open(file_name, "r") as file:
         for line in file:
@@ -33,12 +34,18 @@ def main():
         doc_id_list.append(doc_id)
         doc_text_list.append(doc_text)
     doc_id = pa.array(doc_id_list)
-    doc_text = pa.array(doc_text_list, type=pa.large_string())
+    doc_text = pa.array(doc_text_list, type=pa.string())
     table = pa.table({"doc_id": doc_id, "doc_text": doc_text})
-    dataset = lance.write_dataset(table, file_out)
-    dataset.create_scalar_index("doc_text", index_type="INVERTED")
+    dataset = lance.write_dataset(
+        table,
+        file_out,
+    )
+    # dataset = lance.dataset('gs://yang-bench/bm25.lance')
+    print("created dataset, num_rows:", dataset.count_rows())
 
+    dataset.create_scalar_index("doc_text", index_type="INVERTED")
     print("indexed")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

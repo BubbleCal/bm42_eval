@@ -43,7 +43,7 @@ def sanitize_query_for_tantivy(query):
 def main():
     schema_builder = tantivy.SchemaBuilder()
     schema_builder.add_text_field("body", stored=True, tokenizer_name="en_stem")
-    schema_builder.add_text_field("doc_id", stored=True)
+    schema_builder.add_text_field("doc_id", stored=False)
     schema = schema_builder.build()
     index = tantivy.Index(schema, path=f"data/{DATASET}/bm25.tantivy/")
 
@@ -53,14 +53,15 @@ def main():
     queries = list(load_queries().values())[:number_of_queries]
     queries = [sanitize_query_for_tantivy(query["text"]) for query in queries]
 
-    for concurrency in [1, 2, 4, 8, 16, 32]:
+    for concurrency in [4, 8, 16]:
         latencies = []
         limit = 10
 
         def search_bm25(query):
             start = time.time()
-            query = index.parse_query(query, ['body'])
+            query = index.parse_query(query, ["body"])
             hits = searcher.search(query, limit).hits
+            docs = [searcher.doc(doc_address) for (_, doc_address) in hits]
             latencies.append(time.time() - start)
 
             return hits

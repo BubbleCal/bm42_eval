@@ -42,7 +42,12 @@ def main():
     def search_bm25(query, limit):
         query = sanitize_query_for_tantivy(query)
         plan = dataset.scanner(
-            columns=["doc_id"], full_text_query=("doc_text", query), limit=limit
+            columns=["doc_id"],
+            full_text_query={
+                "query": query,
+                "columns": ["doc_text"],
+            },
+            limit=limit,
         )
         table = plan.to_table()
         hits = table.to_pylist()
